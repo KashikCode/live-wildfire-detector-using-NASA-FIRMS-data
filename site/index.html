@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b1f33" />
+  <meta name="description" content="TerraSignal: explore NASA FIRMS satellite thermal observations with an interactive near-real-time wildfire monitoring map." />
+  <title>TerraSignal | Wildfire Observation Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" href="#overview" aria-label="TerraSignal home">
+        <span class="brand-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><circle cx="13" cy="13" r="9.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 13h20M13 3c-4.5 5.7-4.5 14.3 0 20M13 3c4.5 5.7 4.5 14.3 0 20" stroke="currentColor" stroke-width="1.35"/><circle cx="18.3" cy="8.1" r="3.1" fill="#f78b54"/></svg></span>
+        <span>Terra<span class="brand-accent">Signal</span></span>
+      </a>
+      <nav class="navigation" aria-label="Main menu"><a class="nav-selected" href="#overview">Monitor</a><a href="#insights">Insights</a><a href="#methodology">Methodology</a></nav>
+      <a class="source-link" href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA FIRMS <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main id="overview">
+      <div class="masthead">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-line"></span> SATELLITE FIRE INTELLIGENCE <span class="version">/ VIIRS · NRT</span></div>
+          <h1>See the signal.<br /><span>Understand the fire.</span></h1>
+          <p class="intro">Explore satellite-detected thermal activity across the contiguous United States. From orbital observations to a clearer picture on the ground.</p>
+        </div>
+        <div class="masthead-status"><div id="mode-pill" class="mode-pill demo"><span class="pulse-dot"></span> LOADING DATA</div><div class="timestamp-label">DATA SNAPSHOT</div><strong id="updated-at">Checking feed…</strong><span id="source-description">NASA VIIRS NOAA-20 / NOAA-21</span></div>
+      </div>
+
+      <div id="demo-warning" class="notice" hidden role="status"><span class="notice-icon">i</span><span><strong>Demonstration mode.</strong> These are generated example locations, not real fires. To use NASA observations, configure the repository’s <code>FIRMS_MAP_KEY</code> secret.</span></div>
+      <div id="feed-error" class="notice error" hidden role="alert">The data feed could not be loaded. Refresh the page or check the published files.</div>
+
+      <section class="metric-grid" aria-label="Observation summary">
+        <article class="metric"><div class="metric-title">THERMAL OBSERVATIONS <span class="metric-glyph">◎</span></div><div class="metric-value" id="metric-detections">—</div><div class="metric-caption" id="metric-period">Within selected filters</div></article>
+        <article class="metric"><div class="metric-title">PEAK RADIATIVE POWER <span class="metric-glyph">↗</span></div><div class="metric-value"><span id="metric-frp">—</span><span class="metric-unit"> MW</span></div><div class="metric-caption">Highest observed FRP in selection</div></article>
+        <article class="metric"><div class="metric-title">MOST RECENT PASS <span class="metric-glyph">◷</span></div><div class="metric-value metric-date" id="metric-recent">—</div><div class="metric-caption">Most recent selected detection · UTC</div></article>
+        <article class="metric"><div class="metric-title">SATELLITE SOURCES <span class="metric-glyph">◈</span></div><div class="metric-value" id="metric-sources">—</div><div class="metric-caption">VIIRS observation platforms</div></article>
+      </section>
+
+      <section class="workspace" aria-label="Fire observation map and controls">
+        <aside class="filters">
+          <div class="panel-heading"><div><div class="section-kicker">01 / CONTROL PANEL</div><h2>Refine your view</h2></div><button type="button" class="reset" id="reset-btn">Reset</button></div>
+          <div class="field"><label for="region">REGION</label><div class="select-wrap"><select id="region"><option value="all">Contiguous United States</option><option value="west">Western United States</option><option value="ca">California</option><option value="pnw">Pacific Northwest</option><option value="mountain">Mountain West</option><option value="tx">Texas</option><option value="se">Southeastern United States</option></select></div><small>Locations are filtered using rectangles, not state boundaries.</small></div>
+          <div class="field"><label for="days">TIME WINDOW</label><div class="select-wrap"><select id="days"><option value="1">Last 24 hours</option><option value="3">Last 3 days</option><option value="7" selected>Last 7 days</option></select></div></div>
+          <div class="field"><label for="satellite">SATELLITE</label><div class="select-wrap"><select id="satellite"><option value="all">NOAA-20 + NOAA-21</option><option value="NOAA-20">VIIRS NOAA-20</option><option value="NOAA-21">VIIRS NOAA-21</option></select></div></div>
+          <fieldset class="field confidence-field"><legend>DETECTION CONFIDENCE</legend><label class="check"><input type="checkbox" value="h" checked /><span class="conf-dot high"></span> High</label><label class="check"><input type="checkbox" value="n" checked /><span class="conf-dot nominal"></span> Nominal</label><label class="check"><input type="checkbox" value="l" checked /><span class="conf-dot low"></span> Low</label><small>NASA's categorical quality assessment, not a wildfire probability.</small></fieldset>
+          <div class="field frp-field"><div class="range-title"><label for="frp">MINIMUM FIRE RADIATIVE POWER</label><b><span id="frp-value">0</span> MW</b></div><input type="range" id="frp" min="0" max="100" step="5" value="0" /><div class="range-scale"><span>0 MW</span><span>100+ MW</span></div><small>FRP indicates radiant energy output, not incident size.</small></div>
+          <button class="download-button" id="export-btn" type="button"><span aria-hidden="true">↓</span> Export filtered CSV</button>
+          <div class="sidebar-foot">Observations are not verified wildfire perimeters or emergency alerts.</div>
+        </aside>
+
+        <div class="map-panel"><div class="map-heading"><div><div class="section-kicker">02 / GEOSPATIAL VIEW</div><h2>Thermal detection map</h2></div><div class="map-status"><span class="green-dot"></span><span id="map-summary">Loading observations</span></div></div><div class="map-wrapper"><div id="map" aria-label="Interactive map showing satellite thermal detections"></div><div class="map-legend"><div class="legend-title">DETECTION CONFIDENCE</div><div><span class="conf-dot high"></span> High</div><div><span class="conf-dot nominal"></span> Nominal</div><div><span class="conf-dot low"></span> Low</div></div><div class="map-overlay">VIIRS / 375 M DETECTION PIXELS <span>·</span> NOT FIRE PERIMETERS</div></div><div class="map-bottom"><span id="render-note">Dots represent satellite thermal observations.</span><span>Map © OpenStreetMap contributors</span></div></div>
+      </section>
+
+      <section class="insight-grid" id="insights" aria-label="Data insights"><div class="insight-card"><div class="panel-heading"><div><div class="section-kicker">03 / TIME SERIES</div><h2>Observations over time</h2></div><span class="panel-meta">UTC · DAILY TOTAL</span></div><div id="chart" class="chart" role="img" aria-label="Daily number of filtered observations"><p class="empty">Loading chart…</p></div></div><div class="insight-card"><div class="panel-heading"><div><div class="section-kicker">04 / ACTIVITY LOG</div><h2>Recent detections</h2></div><span class="panel-meta">TOP 8 BY TIME</span></div><div id="observation-list" class="activity-list"><p class="empty">Loading detections…</p></div></div></section>
+
+      <section class="methodology" id="methodology"><div><div class="section-kicker">BEHIND THE DATA</div><h2>Detection is not confirmation.</h2><p>TerraSignal maps thermal anomalies supplied by NASA FIRMS. They can indicate fire activity, but may also reflect agricultural burning, other hot sources, or non-wildfire events. A satellite's absence of detections does not establish that an area is safe.</p></div><div class="method-right"><strong>Why precision and recall matter</strong><p>Missing a true fire and generating an unnecessary alert have different costs. Evaluating those tradeoffs requires independently verified fire and non-fire examples, including fires missed by the upstream satellite detector. This map alone cannot calculate false-negative rates.</p><a href="https://firms.modaps.eosdis.nasa.gov/api/area" target="_blank" rel="noopener noreferrer">Explore the NASA Area API ↗</a></div></section>
+    </main>
+    <footer class="footer"><span><b>TerraSignal</b> / An independent educational project using NASA FIRMS data</span><span>Not affiliated with NASA · Not an emergency-response tool · <a href="https://www.ready.gov/wildfires" target="_blank" rel="noopener noreferrer">Official safety guidance ↗</a></span></footer>
+  </div>
+</body>
+</html>
